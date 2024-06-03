@@ -5,6 +5,13 @@ import subprocess
 import os
 import uuid
 import json
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from datetime import datetime
+from dotenv import load_dotenv
+import logging
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -29,7 +36,15 @@ def run_docker_command(command):
     try:
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
+        logging.error(f"Error executing docker command: {e}")
         raise HTTPException(status_code=500, detail="Error executing code")
+
+# Database setup
+DATABASE_URL = os.getenv("POSTGRES_URL")
+
+def get_db_connection():
+    conn = psycopg2.connect(DATABASE_URL)
+    return conn
 
 @app.post("/test-code")
 async def test_code(payload: CodePayload):
@@ -39,7 +54,6 @@ async def test_code(payload: CodePayload):
     user_id = os.getuid()
 
     with open(code_file, "w") as f:
-        print(f"payload: {payload}")
         f.write(payload.code)
     
     try:
@@ -53,7 +67,6 @@ async def test_code(payload: CodePayload):
         
         with open(result_file, "r") as f:
             result = json.load(f)
-            print(f"result: {result}")
         
         os.remove(result_file)
         os.remove(code_file)
@@ -73,9 +86,16 @@ async def test_code(payload: CodePayload):
             "stderr": result['stderr']
         }
     except subprocess.CalledProcessError as e:
+        logging.error(f"Subprocess error: {e}")
         raise HTTPException(status_code=500, detail="Error executing code")
     except PermissionError as e:
+        logging.error(f"Permission error: {e}")
         raise HTTPException(status_code=500, detail=f"Permission error: {str(e)}")
+    finally:
+        if os.path.exists(result_file):
+            os.remove(result_file)
+        if os.path.exists(code_file):
+            os.remove(code_file)
 
 @app.post("/submit-code")
 async def submit_code(payload: CodePayload):
@@ -107,35 +127,39 @@ async def submit_code(payload: CodePayload):
                 "stderr": result['stderr']
             })
 
-        # Persist code and result to database (assuming a SQLAlchemy setup)
-        # from sqlalchemy import create_engine, MetaData, Table, Column, String
-        # engine = create_engine("your_database_url")
-        # metadata = MetaData()
-        # codes_table = Table(
-        #     "codes", metadata,
-        #     Column("id", String, primary_key=True),
-        #     Column("code", String),
-        #     Column("result", String),
-        #     Column("stdout", String),
-        #     Column("stderr", String)
-        # )
-        # conn = engine.connect()
-        # conn.execute(codes_table.insert().values(
-        #     id=code_id, code=payload.code, 
-        #     result=json.dumps(result['result']), 
-        #     stdout=result['stdout'], 
-        #     stderr=result['stderr']
-        # ))
-        # conn.close()
+        # Persist code and result to database
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO code_submissions (created_at, user_code, execution_output)
+            VALUES ( %s, %s, %s)
+            """,
+            (datetime.utcnow(), payload.code, json.dumps(result))
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
 
         os.remove(result_file)
         os.remove(code_file)
 
-        return {"message": "Code submitted successfully", "output": result['result']}
+        return {
+            "message": "Code submitted successfully", 
+            "result": result['result'],
+            "stdout": result['stdout'],
+            "stderr": result['stderr']}
     except subprocess.CalledProcessError as e:
+        logging.error(f"Subprocess error: {e}")
         raise HTTPException(status_code=500, detail="Error executing code")
     except PermissionError as e:
+        logging.error(f"Permission error: {e}")
         raise HTTPException(status_code=500, detail=f"Permission error: {str(e)}")
+    finally:
+        if os.path.exists(result_file):
+            os.remove(result_file)
+        if os.path.exists(code_file):
+            os.remove(code_file)
 
 if __name__ == "__main__":
     import uvicorn

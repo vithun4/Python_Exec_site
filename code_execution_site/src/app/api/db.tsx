@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:8000';
 
 // Corrected testCode function
-export const testCode = async (code: string) => {
+export const testCode = async (code:string) => {
   try {
     const response = await fetch(`${API_URL}/test-code`, {
       method: 'POST',
@@ -13,9 +13,9 @@ export const testCode = async (code: string) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to test code');
+      return errorData.detail;
     }
-    console.log(response);
+
     return response.json();
   } catch (error) {
     console.error('Error testing code:', error);
@@ -23,7 +23,7 @@ export const testCode = async (code: string) => {
   }
 };
 
-export const submitCode = async (code: string) => {
+export const submitCode = async (code:string) => {
   try {
     const response = await fetch(`${API_URL}/submit-code`, {
       method: 'POST',
@@ -35,7 +35,7 @@ export const submitCode = async (code: string) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to submit code');
+      return errorData.detail;
     }
 
     return response.json();
