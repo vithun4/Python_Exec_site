@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Code Execution Site
 
-## Getting Started
+This project consists of a frontend and backend setup to provide a code execution environment for Python code using pandas and scipy libraries.
 
-First, run the development server:
+## Frontend Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Navigate to the `code_execution_site` directory:
+   ```bash
+   cd code_execution_site
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install the dependencies:
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Backend Setup
 
-## Learn More
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. Install the dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Start the FastAPI server:
+   ```bash
+   uvicorn main:app --reload
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## Additional Information
 
-## Deploy on Vercel
+- Ensure Docker is installed and running on your machine to execute the code within a containerized environment.
+- The backend is configured to connect to a PostgreSQL database. Make sure to set up your database connection string in a `.env` file with the key `POSTGRES_URL`.
+- Make sure frontend is exposed to the backend api url
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+With these steps, you'll have both the frontend and backend running locally, ready to execute and test Python code!
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+---
+
+By Vithun Vigneswaran

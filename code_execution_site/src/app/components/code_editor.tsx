@@ -5,6 +5,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { testCode, submitCode } from '../api/db';
 
 const CodeEditor: React.FC = () => {
+  // State variables to manage code, flags for code modification, success status, and output/errors.
   const [code, setCode] = useState<string>('');
   const [isCodeModified, setIsCodeModified] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
@@ -14,21 +15,26 @@ const CodeEditor: React.FC = () => {
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [traceback, setTraceback] = useState<string>('');
 
+  // Effect to mark code as modified when it changes.
   useEffect(() => {
     setIsCodeModified(true);
   }, [code]);
 
+  // Handler for code changes in the CodeMirror editor.
   const handleCodeChange = (value: string) => {
     setCode(value);
     setIsCodeModified(true);
   };
 
+  // Function to handle code testing
   const handleTestCode = async () => {
     setOutput('');
     setError('');
     setSuccess(false);
     setIsTesting(true);
+    setTraceback('');
     try {
+      // Call the testCode API and handle the result.
       const result = await testCode(code);
       console.log(result);
       setOutput(result.stdout);
@@ -46,18 +52,22 @@ const CodeEditor: React.FC = () => {
     }
   };
 
+  // Function to handle code submission
   const handleSubmitCode = async () => {
     setOutput('');
     setError('');
     setSuccess(false);
     setIsSubmitting(true);
+    setTraceback('');
     try {
+      // Call the submitCode API and handle the result.
       const result = await submitCode(code);
       if (result.message) {
         setSuccess(true);
       }
       setOutput(result.stdout);
-      setError(result.stderr || '');
+      setError(result.error || '');
+      setTraceback(result.traceback || '');
     } catch (err) {
       if (err instanceof Error) {
         console.log(err);
@@ -71,7 +81,7 @@ const CodeEditor: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg flex flex-col items-center mt-8">
+    <div className="w-full max-w-4xl bg-white p-6 rounded-lg shadow-lg flex flex-col items-center mt-8">
       <h2 className="text-2xl font-bold mb-4 self-start">Code Editor</h2>
       <p className="text-gray-600 mb-4 self-start">Write Python code using pandas and scipy</p>
       

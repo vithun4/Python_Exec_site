@@ -11,14 +11,15 @@ from datetime import datetime
 from dotenv import load_dotenv
 import logging
 
+# Load environment variables from a .env file
 load_dotenv()
 
 app = FastAPI()
 
 # CORS configuration
 origins = [
-    "http://localhost:3000",  # Your React app URL
-    "http://127.0.0.1:3000",  # Another way to access your React app
+    "http://localhost:3000",  
+    "http://127.0.0.1:3000",  
 ]
 
 app.add_middleware(
@@ -29,9 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Pydantic model for code payload
 class CodePayload(BaseModel):
     code: str
 
+# Function to run Docker commands
 def run_docker_command(command):
     try:
         subprocess.run(command, check=True)
@@ -42,10 +45,12 @@ def run_docker_command(command):
 # Database setup
 DATABASE_URL = os.getenv("POSTGRES_URL")
 
+# Function to get database connection
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
+# Endpoint to test code
 @app.post("/test-code")
 async def test_code(payload: CodePayload):
     code_id = str(uuid.uuid4())
@@ -53,10 +58,12 @@ async def test_code(payload: CodePayload):
     result_file = f"/tmp/{code_id}_result.json"
     user_id = os.getuid()
 
+    # Write code to a temporary file
     with open(code_file, "w") as f:
         f.write(payload.code)
     
     try:
+        # Build and run Docker container
         run_docker_command(["docker", "buildx", "build", "--load", "-t", code_id, "."])
         run_docker_command([
             "docker", "run", "--rm", 
@@ -65,6 +72,7 @@ async def test_code(payload: CodePayload):
             code_id, code_file, result_file
         ])
         
+        # Read and return the result from the output file
         with open(result_file, "r") as f:
             result = json.load(f)
         
@@ -97,6 +105,7 @@ async def test_code(payload: CodePayload):
         if os.path.exists(code_file):
             os.remove(code_file)
 
+# Endpoint to submit code
 @app.post("/submit-code")
 async def submit_code(payload: CodePayload):
     code_id = str(uuid.uuid4())
@@ -104,10 +113,12 @@ async def submit_code(payload: CodePayload):
     result_file = f"/tmp/{code_id}_result.json"
     user_id = os.getuid()
 
+    # Write code to a temporary file
     with open(code_file, "w") as f:
         f.write(payload.code)
     
     try:
+        # Build and run Docker container
         run_docker_command(["docker", "buildx", "build", "--load", "-t", code_id, "."])
         run_docker_command([
             "docker", "run", "--rm", 
@@ -116,6 +127,7 @@ async def submit_code(payload: CodePayload):
             code_id, code_file, result_file
         ])
         
+        # Read the result from the output file
         with open(result_file, "r") as f:
             result = json.load(f)
 
@@ -127,13 +139,13 @@ async def submit_code(payload: CodePayload):
                 "stderr": result['stderr']
             })
 
-        # Persist code and result to database
+        # Persist code and result to the database
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
             """
             INSERT INTO code_submissions (created_at, user_code, execution_output)
-            VALUES ( %s, %s, %s)
+            VALUES (%s, %s, %s)
             """,
             (datetime.utcnow(), payload.code, json.dumps(result))
         )
@@ -148,7 +160,8 @@ async def submit_code(payload: CodePayload):
             "message": "Code submitted successfully", 
             "result": result['result'],
             "stdout": result['stdout'],
-            "stderr": result['stderr']}
+            "stderr": result['stderr']
+        }
     except subprocess.CalledProcessError as e:
         logging.error(f"Subprocess error: {e}")
         raise HTTPException(status_code=500, detail="Error executing code")
