@@ -53,6 +53,7 @@ async def test_code(payload: CodePayload):
         
         with open(result_file, "r") as f:
             result = json.load(f)
+            print(f"result: {result}")
         
         os.remove(result_file)
         os.remove(code_file)

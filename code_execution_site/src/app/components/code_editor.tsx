@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+
 import React, { useEffect, useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { testCode, submitCode } from '../api/db';
@@ -25,6 +27,7 @@ const CodeEditor: React.FC = () => {
     setIsTesting(true);
     try {
       const result = await testCode(code);
+      console.log(result);
       setOutput(result.stdout);
       setError(result.stderr || '');
     } catch (err) {
@@ -62,8 +65,8 @@ const CodeEditor: React.FC = () => {
       <h2 className="text-2xl font-bold mb-4 self-start">Code Editor</h2>
       <p className="text-gray-600 mb-4 self-start">Write Python code using pandas and scipy</p>
         
-      <h4 className="font-bold self-start">Example Input:</h4>
-            <pre className='self-start mb-3'>print("Hello World")</pre>
+      <h4 className='font-bold self-start'>Example Input:</h4>
+      <pre className='self-start mb-3'>print("Hello World")</pre>
       <CodeMirror
         className="w-full border border-gray-400 rounded-lg p-2"
         value={code}
@@ -95,6 +98,8 @@ const CodeEditor: React.FC = () => {
       </div>
       {output && (
         <div className="mt-4 p-4 w-full bg-gray-100 rounded-lg">
+          <h4 className="font-bold">Output:</h4>
+          <pre>{output}</pre>
         </div>
       )}
       {error && (
